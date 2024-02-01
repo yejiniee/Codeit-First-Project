@@ -2,6 +2,10 @@
   "extends": ["airbnb", "prettier"],
   "plugins": ["prettier"],
   "rules": {
+    "import/no-extraneous-dependencies": 0,
+    "react/prop-types": "off", // children prop사용 시 type정해주지 않으면 오류나는 설정 끔
+    "no-undef": "off",
+    "import/no-unresolved": "off",
     "react/react-in-jsx-scope": "off",
     "prettier/prettier": [
       "error",
