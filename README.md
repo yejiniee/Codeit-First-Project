@@ -82,7 +82,7 @@
 
 ## 📃 배포주소
 
-- https://65ba5c7e6462c9eb42b7228a--openmind-3-2.netlify.app/
+- https://3-2open-mind.netlify.app/
 
 ## 💾 기술 스택
 
