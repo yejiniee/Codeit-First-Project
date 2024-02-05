@@ -3,8 +3,6 @@ import styled from 'styled-components';
 import { useState } from 'react';
 import thumbsUp from '../../assets/thumbs-up.svg';
 import thumbsDown from '../../assets/thumbs-down.svg';
-import clickedThumbsUp from '../../assets/clicked-thumbs-up.svg';
-import clickedThumbsDown from '../../assets/clicked-thumbs-down.svg';
 import storeReaction from '../../services/storeReaction';
 
 export default function ReactionButton({ question: { id, like, dislike } }) {
@@ -13,37 +11,25 @@ export default function ReactionButton({ question: { id, like, dislike } }) {
     dislike,
     likeIcon: thumbsUp,
     dislikeIcon: thumbsDown,
-    disabled: false,
   });
-  //  reaction 누르면 빨리 누른거 못따라감
-  const handleEmotion = async type => {
-    const likeAndDislike = await storeReaction({ id, type }); //  questions/{id}/reaction 보내고 받아오면 그 like, dislike 값 받아와서 상태값 업데이트
+  const handleEmotion = type => {
     if (type === 'like') {
       setReaction({
-        like: likeAndDislike.like,
-        dislike: likeAndDislike.dislike,
-        likeIcon: clickedThumbsUp,
+        like: reaction.like + 1,
+        dislike: reaction.dislike,
+        likeIcon: thumbsUp,
         dislikeIcon: thumbsDown,
-        disabled: true,
       });
     } else {
       setReaction({
-        like: likeAndDislike.like,
-        dislike: likeAndDislike.dislike,
-        likeIcon: thumbsUp,
-        dislikeIcon: clickedThumbsDown,
-        disabled: true,
-      });
-    }
-    setTimeout(() => {
-      setReaction({
-        like: likeAndDislike.like,
-        dislike: likeAndDislike.dislike,
+        like: reaction.like,
+        dislike: reaction.dislike + 1,
         likeIcon: thumbsUp,
         dislikeIcon: thumbsDown,
-        disabled: false,
       });
-    }, [400]);
+    }
+
+    storeReaction({ id, type });
   };
 
   return (

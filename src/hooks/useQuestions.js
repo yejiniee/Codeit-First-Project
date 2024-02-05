@@ -1,4 +1,6 @@
+/* eslint-disable no-param-reassign */
 import { atom, useRecoilState } from 'recoil';
+import { produce } from 'immer';
 
 const questionsAtom = atom({
   key: 'questionsAtom',
@@ -9,33 +11,17 @@ export default function useQuestionsAtom() {
   const [questions, setQuestions] = useRecoilState(questionsAtom);
   function setQuestion(newAnswer, questionId, isDeleteQuestion = false) {
     const updatedQuestionIdx = questions.findIndex(q => q.id === questionId);
-    let newQuestion; // = { ...questions[updatedQuestionIdx], answer: newAnswer };
-    if (newAnswer === null) {
-      newQuestion = {
-        ...questions[updatedQuestionIdx],
-        isAnswered: false,
-        answer: newAnswer,
-      };
-    } else {
-      newQuestion = {
-        ...questions[updatedQuestionIdx],
-        isAnswered: true,
-        answer: newAnswer,
-      };
-    }
 
-    if (isDeleteQuestion) {
-      setQuestions(prev => [
-        ...prev.slice(0, updatedQuestionIdx),
-        ...prev.slice(updatedQuestionIdx + 1),
-      ]);
-    } else {
-      setQuestions(prev => [
-        ...prev.slice(0, updatedQuestionIdx),
-        newQuestion,
-        ...prev.slice(updatedQuestionIdx + 1),
-      ]);
-    }
+    const nextQuestion = produce(questions, draft => {
+      if (isDeleteQuestion) {
+        draft.splice(updatedQuestionIdx, 1);
+      } else {
+        draft[updatedQuestionIdx].answer = newAnswer;
+        draft[updatedQuestionIdx].isAnswered = !!newAnswer;
+      }
+    });
+
+    setQuestions(nextQuestion);
   }
 
   return [questions, setQuestions, setQuestion];

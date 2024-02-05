@@ -44,9 +44,6 @@ export default function Pagination({
 
   // 페이지 설정
   const handlePageChange = newPage => {
-    console.log('newpage:', newPage);
-    console.log('totalPages:', totalPages);
-    console.log('current:', currentPage);
     if (newPage >= FIRST_PAGE && newPage <= totalPages) {
       setPage(newPage);
       setPageGroups(
@@ -56,20 +53,26 @@ export default function Pagination({
   };
   return (
     <PageButtonWrap>
-      {currentPage > FIRST_PAGE && currentPage !== 2 && (
-        <PageButton type="button" onClick={() => handlePageChange(FIRST_PAGE)}>
-          {'<<'}
-        </PageButton>
-      )}
-      {currentPage > FIRST_PAGE && (
-        <PageButton
-          type="button"
-          onClick={() => handlePageChange(currentPage - 1)}
-          disabled={currentPage === 1}
-        >
-          {'<'}
-        </PageButton>
-      )}
+      <PrePageButtons>
+        {currentPage > FIRST_PAGE && currentPage !== 2 && (
+          <PageButton
+            type="button"
+            onClick={() => handlePageChange(FIRST_PAGE)}
+          >
+            {'<<'}
+          </PageButton>
+        )}
+
+        {currentPage > FIRST_PAGE && (
+          <PageButton
+            type="button"
+            onClick={() => handlePageChange(currentPage - 1)}
+            disabled={currentPage === 1}
+          >
+            {'<'}
+          </PageButton>
+        )}
+      </PrePageButtons>
 
       {pageGroups?.map(page => (
         <PageButton
@@ -81,23 +84,30 @@ export default function Pagination({
           {page}
         </PageButton>
       ))}
-      {currentPage < totalPages && (
-        <PageButton
-          type="button"
-          onClick={() => handlePageChange(currentPage + 1)}
-          disabled={currentPage === totalPages}
-        >
-          {'>'}
-        </PageButton>
-      )}
-      {currentPage < totalPages && currentPage !== totalPages - 1 && (
-        <PageButton type="button" onClick={() => handlePageChange(totalPages)}>
-          {'>>'}
-        </PageButton>
-      )}
+      <AfterPageButtons>
+        {currentPage < totalPages && (
+          <PageButton
+            type="button"
+            onClick={() => handlePageChange(currentPage + 1)}
+            disabled={currentPage === totalPages}
+          >
+            {'>'}
+          </PageButton>
+        )}
+
+        {currentPage < totalPages && currentPage !== totalPages - 1 && (
+          <PageButton
+            type="button"
+            onClick={() => handlePageChange(totalPages)}
+          >
+            {'>>'}
+          </PageButton>
+        )}
+      </AfterPageButtons>
     </PageButtonWrap>
   );
 }
+
 const PageButtonWrap = styled.div`
   display: flex;
   justify-content: center;
@@ -105,6 +115,17 @@ const PageButtonWrap = styled.div`
   width: 50rem;
   height: 4rem;
   gap: 1.8rem;
+  position: relative;
+`;
+
+const PrePageButtons = styled.div`
+  position: absolute;
+  left: 5rem;
+`;
+
+const AfterPageButtons = styled.div`
+  position: absolute;
+  right: 5rem;
 `;
 
 const PageButton = styled.button`

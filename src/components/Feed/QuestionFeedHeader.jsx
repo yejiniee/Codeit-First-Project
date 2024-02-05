@@ -1,4 +1,4 @@
-import React, { useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import styled, { ThemeContext } from 'styled-components';
 import { Link } from 'react-router-dom';
 import fetchSubject from '../../services/fetchSubject';
@@ -14,6 +14,17 @@ import useSubjectData from '../../hooks/useSubjectData';
 function QuestionFeedHeader({ subjectId }) {
   const { mode } = useContext(ThemeContext);
   const [subjectData, setSubjectData] = useSubjectData();
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    setIsLoading(true);
+    fetchSubject(subjectId).then(data => {
+      if (data) {
+        setSubjectData(data);
+        setIsLoading(false);
+      }
+    });
+  }, [subjectId, setSubjectData]);
 
   useEffect(() => {
     if (typeof setSubjectData === 'function') {
@@ -37,9 +48,17 @@ function QuestionFeedHeader({ subjectId }) {
             alt="logo"
           />
         </Link>
-        <ProfileImg src={subjectData?.imageSource} alt="profileimg" />
+        {isLoading ? (
+          <SkeletonProfileImg />
+        ) : (
+          <ProfileImg src={subjectData.imageSource} alt="profileimg" />
+        )}
       </QuestionFeedHeaderBox>
-      <QuestionProfileText>{subjectData?.name} </QuestionProfileText>
+      {isLoading ? (
+        <SkeletonText>Loading...</SkeletonText>
+      ) : (
+        <QuestionProfileText>{subjectData.name}</QuestionProfileText>
+      )}
       <QuestionShareIcon>
         <LinkShareIcon />
         <KakaoShareIcon />
@@ -95,6 +114,22 @@ const QuestionShareIcon = styled.div`
   gap: 12px;
   justify-content: center;
   margin-top: 12px;
+`;
+
+const SkeletonProfileImg = styled.div`
+  border-radius: 50%;
+  background-color: #e0e0e0;
+  position: absolute;
+  top: 129px;
+  left: 50%;
+  transform: translateX(-50%);
+`;
+
+const SkeletonText = styled.div`
+  text-align: center;
+  color: #e0e0e0;
+  font-size: 32px;
+  margin-top: 110px;
 `;
 
 export default QuestionFeedHeader;

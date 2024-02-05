@@ -1,6 +1,6 @@
 /* eslint-disable no-unused-vars */
 import { useEffect, useState, useRef } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import useQuestionsAtom from '../hooks/useQuestions';
 import useSubjectData from '../hooks/useSubjectData';
@@ -14,8 +14,17 @@ import NoQuestionFeed from '../components/Feed/NoQuestionFeed';
 import NavigateButton from '../components/Buttons/SendQuestionButton';
 
 export default function AnswerPage() {
-  const { id } = useParams();
-  const [subjectId, setSubjectId] = useState(id);
+  const { id } = useParams(); // 현재 페이지 Id
+  const myId = JSON.parse(localStorage.getItem('id')); // 로그인 계정 Id
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (Number(id) !== Number(myId)) {
+      navigate(`/post/${id}`, { replace: true });
+    }
+  }, [id, navigate]);
+
+  const [subjectId, setSubjectId] = useState(myId);
   const [questions, setQuestions] = useQuestionsAtom();
   const [subjectData, setSubjectData] = useSubjectData();
 
@@ -52,7 +61,9 @@ export default function AnswerPage() {
   }, []);
 
   useEffect(() => {
-    fetchPins(subjectId, offset, limit);
+    if (Number(id) === Number(myId)) {
+      fetchPins(subjectId, offset, limit);
+    }
   }, [offset]);
 
   useEffect(() => {
@@ -73,7 +84,7 @@ export default function AnswerPage() {
 
   return (
     <Wrapper>
-      <QuestionFeedHeader subjectId={subjectId} />
+      {subjectId && <QuestionFeedHeader subjectId={subjectId} />}
       <S.DeleteAndFeed>
         <DeleteAllButton
           text="전체 삭제"
