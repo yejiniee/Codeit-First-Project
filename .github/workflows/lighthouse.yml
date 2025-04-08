@@ -169,14 +169,9 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-
-            const fs = require('fs');
-            const { Octokit } = require('@octokit/rest');
-            const octokit = new Octokit({ auth: `${{ secrets.GITHUB_TOKEN }}` });
-
             const { repo, payload } = context;
 
-            const { data: previousComments } = await octokit.issues.listComments({
+            const { data: previousComments } = await github.issues.listComments({
               owner: repo.owner,
               repo: repo.repo,
               issue_number: payload.pull_request.number,
