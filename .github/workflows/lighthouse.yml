@@ -64,7 +64,12 @@ jobs:
           script: |
 
             const fs = require('fs');
+            const path = require('path'); 
             const { getLhciPageNameFromUrl, LHCI_GREEN_MIN_SCORE, LHCI_ORANGE_MIN_SCORE, LHCI_RED_MIN_SCORE } = require('./src/configs/lighthouse/Lighthouse.js');
+
+            const reportDir = path.resolve('.lighthouseci');
+            const files = fs.readdirSync(reportDir);
+            const jsonFiles = files.filter(file => file.endsWith('.json'));
 
             const getColor = (score) => {
               if (score >= LHCI_GREEN_MIN_SCORE) return '🟢';
@@ -77,19 +82,21 @@ jobs:
 
             const formatResult = (res) => Math.round(res * 100);
 
-            const desktopResults = [
-              {
-                ...JSON.parse(fs.readFileSync('.lighthouseci/desktop.lhr.json', 'utf8')),
-                jsonPath: '.lighthouseci/desktop.lhr.json',
-              }
-            ];
+            const desktopResults = jsonFiles
+              .filter(file => file.toLowerCase().includes('desktop'))
+              .map(file => {
+                const jsonPath = path.join(reportDir, file);
+                const data = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
+                return { ...data, jsonPath };
+              });
 
-            const mobileResults = [
-              {
-                ...JSON.parse(fs.readFileSync('.lighthouseci/mobile.lhr.json', 'utf8')),
-                jsonPath: '.lighthouseci/mobile.lhr.json',
-              }
-            ];
+            const mobileResults = jsonFiles
+              .filter(file => file.toLowerCase().includes('mobile'))
+              .map(file => {
+                const jsonPath = path.join(reportDir, file);
+                const data = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
+                return { ...data, jsonPath };
+              });
 
             const monitoringTime = new Date().toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' });
             const scoreDescription = `> 🟢: ${LHCI_GREEN_MIN_SCORE} - 100` + ' / ' + `🟠: ${LHCI_ORANGE_MIN_SCORE} - ${LHCI_GREEN_MIN_SCORE - 1}` + ' / ' + `🔴: ${LHCI_RED_MIN_SCORE} - ${LHCI_ORANGE_MIN_SCORE - 1}`;
