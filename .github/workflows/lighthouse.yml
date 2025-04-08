@@ -77,19 +77,25 @@ jobs:
 
             const formatResult = (res) => Math.round(res * 100);
 
-            const desktopResults = [
-              {
-                ...JSON.parse(fs.readFileSync('.lighthouseci/desktop.lhr.json', 'utf8')),
-                jsonPath: '.lighthouseci/desktop.lhr.json',
-              }
-            ];
+            const desktopResults = fs.readdirSync('./lhci_reports/desktop')
+              .filter((filename) => filename.endsWith('.json'))
+              .map((filename) => {
+                const jsonPath = `./lhci_reports/desktop/${filename}`;
+                return {
+                  ...JSON.parse(fs.readFileSync(jsonPath, 'utf8')),
+                  jsonPath,
+                };
+              });
 
-            const mobileResults = [
-              {
-                ...JSON.parse(fs.readFileSync('.lighthouseci/mobile.lhr.json', 'utf8')),
-                jsonPath: '.lighthouseci/mobile.lhr.json',
-              }
-            ];
+            const mobileResults = fs.readdirSync('./lhci_reports/mobile')
+              .filter((filename) => filename.endsWith('.json'))
+              .map((filename) => {
+                const jsonPath = `./lhci_reports/mobile/${filename}`;
+                return {
+                  ...JSON.parse(fs.readFileSync(jsonPath, 'utf8')),
+                  jsonPath,
+                };
+              });
 
             const monitoringTime = new Date().toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' });
             const scoreDescription = `> 🟢: ${LHCI_GREEN_MIN_SCORE} - 100` + ' / ' + `🟠: ${LHCI_ORANGE_MIN_SCORE} - ${LHCI_GREEN_MIN_SCORE - 1}` + ' / ' + `🔴: ${LHCI_RED_MIN_SCORE} - ${LHCI_ORANGE_MIN_SCORE - 1}`;
