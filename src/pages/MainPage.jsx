@@ -1,20 +1,19 @@
 /* eslint-disable no-await-in-loop */
 /* eslint-disable import/no-named-as-default-member */
 /* eslint-disable no-unused-vars */
-import styled, { ThemeContext } from 'styled-components';
-import { Link, useNavigate } from 'react-router-dom';
 import { useContext, useEffect, useState } from 'react';
-import logo from '../assets/MainLogo.png';
+import { useNavigate } from 'react-router-dom';
+import styled, { ThemeContext } from 'styled-components';
 import darkLogo from '../assets/MainLogo-dark.png';
-import mainBg from '../assets/backGround.svg';
+import logo from '../assets/MainLogo.png';
 import darkMainBg from '../assets/backGround-dark.png';
-import NameInput from '../components/Inputs/NameInput';
+import mainBg from '../assets/backGround.svg';
 import GetQuestionButton from '../components/Buttons/GetQuestionButton';
-import storeId from '../services/storeId';
-import SendQuestionButton from '../components/Buttons/SendQuestionButton';
 import IdTypeSelectButton from '../components/Buttons/IdTypeSelectButton';
 import NicknamesListButton from '../components/Buttons/NicknameListButton';
+import NameInput from '../components/Inputs/NameInput';
 import fetchSubject from '../services/fetchSubject';
+import storeId from '../services/storeId';
 
 export default function MainPage() {
   const [inputValue, setInputValue] = useState('');
@@ -41,6 +40,7 @@ export default function MainPage() {
         localStorage.setItem('userAccounts', JSON.stringify(values)); // 이 브라우저의 모든 유저 정보 저장
         navigate(`/post/${id}/answer`); // id에따른 answer페이지로 이동
       } else {
+        // eslint-disable-next-line no-alert
         alert('닉네임을 입력하세요.');
       }
     } else {
@@ -48,6 +48,7 @@ export default function MainPage() {
       if (id) {
         navigate(`/post/${id}/answer`);
       } else {
+        // eslint-disable-next-line no-alert
         alert('아이디를 생성하세요.');
       }
     }
@@ -64,6 +65,7 @@ export default function MainPage() {
         localStorage.setItem('userAccounts', JSON.stringify(values));
         navigate('/list');
       } else {
+        // eslint-disable-next-line no-alert
         alert('익명으로 접속합니다용~!');
         localStorage.setItem('id', JSON.stringify(''));
         navigate('/list');
