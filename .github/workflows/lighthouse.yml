@@ -200,25 +200,65 @@ jobs:
                 body: newComment,
               });
             }
-            - name: Update Google SpreadSheet
-            uses: actions/github-script@v7
-            with: 
-              script: |
-                const fs = require('fs');
-                const { GoogleSpreadsheet } = require('google-spreadsheet');
-                const { LHCI_GOOGLE_SPREAD_SHEET_ID, getLhciSheetIdFromPageName } = require('./src/configs/lighthouse/Lighthouse.js');
-                
-                const updateGoogleSheet = async () => {
-                  const creds = {
-                    client_email: `${{ secrets.LHCI_GOOGLE_CLIENT_EMAIL }}`, 
-                    private_key: `${{ secrets.LHCI_GOOGLE_PRIVATE_KEY }}`, 
-                  };
 
-                  const { desktop, mobile } = ${{ steps.format_lighthouse_score.outputs.scores }};
-                  const monitoringTime = `${{ steps.format_lighthouse_score.outputs.monitoringTime }}`;
+      - name: Update Google SpreadSheet
+        uses: actions/github-script@v7
+        with:
+          script: |
 
-                  const { repo, payload } = context;
+            const fs = require('fs');
+            const { GoogleSpreadsheet } = require('google-spreadsheet');
+            const { LHCI_GOOGLE_SPREAD_SHEET_ID, getLhciSheetIdFromPageName } = require('./src/configs/lighthouse/Lighthouse.js');
 
-                  const doc = new GoogleSpreadsheet(LHCI_GOOGLE_SPREAD_SHEET_ID); 
-                  await doc.useServiceAccountAuth(creds);
-                  await doc.load
+            const updateGoogleSheet = async () => {
+              const creds = {
+                client_email: `${{ secrets.LHCI_GOOGLE_CLIENT_EMAIL }}`, 
+                private_key: `${{ secrets.LHCI_GOOGLE_PRIVATE_KEY }}`, 
+              };
+
+              const { desktop, mobile } = ${{ steps.format_lighthouse_score.outputs.scores }};
+              const monitoringTime = `${{ steps.format_lighthouse_score.outputs.monitoringTime }}`;
+
+              const { repo, payload } = context;
+
+              const doc = new GoogleSpreadsheet(LHCI_GOOGLE_SPREAD_SHEET_ID); 
+              await doc.useServiceAccountAuth(creds);
+              await doc.loadInfo();
+
+              for (const pageName in desktop) {
+                const sheetId = getLhciSheetIdFromPageName(pageName);
+                const desktopScore = desktop[pageName];
+                const mobileScore = mobile[pageName];
+
+                const sheet = doc.sheetsById[sheetId];
+                await sheet.loadHeaderRow();
+
+                const prUrl = `https://github.com/${repo.owner}/${repo.repo}/pull/${payload.pull_request.number}`;
+                const prHyperlink = '=HYPERLINK("' + prUrl + '", "#' + payload.pull_request.number + '")';
+
+                const rows = await sheet.getRows(); 
+                const previousRow = rows.find((row) => row['PR url'] === `#${payload.pull_request.number}`);
+
+                if (previousRow) { 
+                  previousRow['Monitoring Time'] = monitoringTime;
+                  previousRow['PR url'] = prHyperlink;
+                  Object.keys(desktopScore).forEach((key) => {
+                    previousRow[key + ' [D]'] = desktopScore[key];
+                    previousRow[key + ' [M]'] = mobileScore[key];
+                  });
+
+                  await previousRow.save();
+                  continue;
+                } 
+
+                const newRow = { 'PR url': prHyperlink, 'Monitoring Time': monitoringTime };
+                Object.keys(desktopScore).forEach((key) => {
+                    newRow[key + ' [D]'] = desktopScore[key];
+                    newRow[key + ' [M]'] = mobileScore[key];
+                  });
+
+                await sheet.addRow(newRow);
+              } 
+            }
+
+            updateGoogleSheet().catch(err => core.setFailed(err.message));
