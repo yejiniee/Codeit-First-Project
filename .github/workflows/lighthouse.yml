@@ -19,10 +19,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Use Node.js 18.12.1
+      - name: Use Node.js 22.13.1
         uses: actions/setup-node@v4
         with:
-          node-version: 18.12.1
+          node-version: 22.13.1
 
       - name: Cache node_modules
         uses: actions/cache@v4
@@ -47,15 +47,15 @@ jobs:
           LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}
         run: |
           npm install -g @lhci/cli
-          lhci collect --config=lighthouserc-desktop.js || echo 'Fail to Run Lighthouse CI 💦'
-          lhci upload --config=lighthouserc-desktop.js || echo 'Fail to Run Lighthouse CI 💦'
+          lhci collect --config=.lighthouserc-desktop.js || echo 'Fail to Run Lighthouse CI 💦'
+          lhci upload --config=.lighthouserc-desktop.js || echo 'Fail to Run Lighthouse CI 💦'
 
       - name: Run Lighthouse CI for Mobile
         env:
           LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}
         run: |
-          lhci collect --config=lighthouserc-mobile.js || echo 'Fail to Run Lighthouse CI 💦'
-          lhci upload --config=lighthouserc-mobile.js || echo 'Fail to Run Lighthouse CI 💦'
+          lhci collect --config=.lighthouserc-mobile.js || echo 'Fail to Run Lighthouse CI 💦'
+          lhci upload --config=.lighthouserc-mobile.js || echo 'Fail to Run Lighthouse CI 💦'
 
       - name: Format lighthouse score
         id: format_lighthouse_score
