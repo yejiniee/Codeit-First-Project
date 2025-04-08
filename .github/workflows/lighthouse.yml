@@ -182,10 +182,10 @@ jobs:
               issue_number: payload.pull_request.number,
             });
 
-            const previousLhciComment = previousComments.find((comment) => (comment.body.startsWith(`### Lighthouse report ✨\n`)));
+            const previousLHCIComment = previousComments.find((comment) => (comment.body.startsWith(`### Lighthouse report ✨\n`)));
             const newComment = `${{ steps.format_lighthouse_score.outputs.comments }}`;
 
-            if (previousLhciComment) {
+            if (previousLHCIComment) {
               await octokit.issues.updateComment({
                 owner: repo.owner,
                 repo: repo.repo,
