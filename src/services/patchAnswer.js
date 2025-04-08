@@ -16,7 +16,7 @@ async function patchAnswer(answerId, answer) {
     const result = await response.json();
     return result;
   } catch (error) {
-    console.error(error);
+    // console.error(error);
     return null;
   }
 }

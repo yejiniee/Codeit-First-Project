@@ -9,7 +9,7 @@ async function deleteAnswer(answerId) {
     }
     return null;
   } catch (error) {
-    console.error(error);
+    // console.error(error);
     return null;
   }
 }
