@@ -1,11 +1,11 @@
+import { useContext } from 'react';
 import { createPortal } from 'react-dom';
 import styled, { ThemeContext } from 'styled-components';
-import { useContext } from 'react';
-import QuestionInput from '../Inputs/QuestionInput';
-import messageIcon from '../../assets/Messages.svg';
-import messageIconDark from '../../assets/Messages-dark.svg';
-import closeButton from '../../assets/close.svg';
 import darkCloseButton from '../../assets/dark-close.svg';
+import messageIconDark from '../../assets/Messages-dark.svg';
+import messageIcon from '../../assets/Messages.svg';
+import closeButton from '../../assets/x.svg';
+import QuestionInput from '../Inputs/QuestionInput';
 
 export default function ModalWindow({
   handleStoreQeustion,
