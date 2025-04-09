@@ -64,12 +64,12 @@ jobs:
           script: |
 
             const fs = require('fs');
-            const path = require('path'); 
+            # const path = require('path'); 
             const { getLhciPageNameFromUrl, LHCI_GREEN_MIN_SCORE, LHCI_ORANGE_MIN_SCORE, LHCI_RED_MIN_SCORE } = require('./src/configs/lighthouse/Lighthouse.js');
 
-            const reportDir = path.resolve('.lighthouseci');
-            const files = fs.readdirSync(reportDir);
-            const jsonFiles = files.filter(file => file.endsWith('.json'));
+            # const reportDir = path.resolve('.lighthouseci');
+            # const files = fs.readdirSync(reportDir);
+            # const jsonFiles = files.filter(file => file.endsWith('.json'));
 
             const getColor = (score) => {
               if (score >= LHCI_GREEN_MIN_SCORE) return '🟢';
@@ -82,21 +82,23 @@ jobs:
 
             const formatResult = (res) => Math.round(res * 100);
 
-            const desktopResults = jsonFiles
-              .filter(file => file.toLowerCase().includes('desktop'))
-              .map(file => {
-                const jsonPath = path.join(reportDir, file);
-                const data = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
-                return { ...data, jsonPath };
-              });
+            const desktopResults = JSON.parse(fs.readFileSync(''));
+            const mobileResults = JSON.parse(fs.readFileSync(''));
+            # const desktopResults = jsonFiles
+            #   .filter(file => file.toLowerCase().includes('desktop'))
+            #   .map(file => {
+            #     const jsonPath = path.join(reportDir, file);
+            #     const data = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
+            #     return { ...data, jsonPath };
+            #   });
 
-            const mobileResults = jsonFiles
-              .filter(file => file.toLowerCase().includes('mobile'))
-              .map(file => {
-                const jsonPath = path.join(reportDir, file);
-                const data = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
-                return { ...data, jsonPath };
-              });
+            # const mobileResults = jsonFiles
+            #   .filter(file => file.toLowerCase().includes('mobile'))
+            #   .map(file => {
+            #     const jsonPath = path.join(reportDir, file);
+            #     const data = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
+            #     return { ...data, jsonPath };
+            #   });
 
             const monitoringTime = new Date().toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' });
             const scoreDescription = `> 🟢: ${LHCI_GREEN_MIN_SCORE} - 100` + ' / ' + `🟠: ${LHCI_ORANGE_MIN_SCORE} - ${LHCI_GREEN_MIN_SCORE - 1}` + ' / ' + `🔴: ${LHCI_RED_MIN_SCORE} - ${LHCI_ORANGE_MIN_SCORE - 1}`;
@@ -207,74 +209,63 @@ jobs:
           MOBILE_SCORES: ${{ steps.format_lighthouse_score.outputs.scores.mobile }}
 
       - name: Update Google SpreadSheet
-        run: |
-          npm install google-spreadsheet
-          node .github/scripts/update-google-sheet.js
-        env:
-          LHCI_GOOGLE_CLIENT_EMAIL: ${{ secrets.LHCI_GOOGLE_CLIENT_EMAIL }}
-          LHCI_GOOGLE_PRIVATE_KEY: ${{ secrets.LHCI_GOOGLE_PRIVATE_KEY }}
-          DESKTOP_SCORES: ${{ steps.format_lighthouse_score.outputs.scores.desktop }}
-          MOBILE_SCORES: ${{ steps.format_lighthouse_score.outputs.scores.mobile }}
-          MONITORING_TIME: ${{ steps.format_lighthouse_score.outputs.monitoringTime }}
-          PR_URL: https://github.com/${{ github.repository }}/pull/${{ github.event.pull_request.number }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-        # uses: actions/github-script@v7
-        # with:
-        #   script: |
+        uses: actions/github-script@v7
+        with:
+          script: |
 
-        #     const fs = require('fs');
-        #     const { GoogleSpreadsheet } = require('google-spreadsheet');
-        #     const { LHCI_GOOGLE_SPREAD_SHEET_ID, getLhciSheetIdFromPageName } = require('./src/configs/lighthouse/Lighthouse.js');
+            const fs = require('fs');
+            const { GoogleSpreadsheet } = require('google-spreadsheet');
+            const { LHCI_GOOGLE_SPREAD_SHEET_ID, getLhciSheetIdFromPageName } = require('./src/configs/lighthouse/Lighthouse.js');
 
-        #     const updateGoogleSheet = async () => {
-        #       const creds = {
-        #         client_email: `${{ secrets.LHCI_GOOGLE_CLIENT_EMAIL }}`,
-        #         private_key: `${{ secrets.LHCI_GOOGLE_PRIVATE_KEY }}`,
-        #       };
+            const updateGoogleSheet = async () => {
+              const creds = {
+                client_email: `${{ secrets.LHCI_GOOGLE_CLIENT_EMAIL }}`,
+                private_key: `${{ secrets.LHCI_GOOGLE_PRIVATE_KEY }}`,
+              };
 
-        #       const { desktop, mobile } = ${{ steps.format_lighthouse_score.outputs.scores }};
-        #       const monitoringTime = `${{ steps.format_lighthouse_score.outputs.monitoringTime }}`;
+              const { desktop, mobile } = ${{ steps.format_lighthouse_score.outputs.scores }};
+              const monitoringTime = `${{ steps.format_lighthouse_score.outputs.monitoringTime }}`;
 
-        #       const { repo, payload } = context;
+              const { repo, payload } = context;
 
-        #       const doc = new GoogleSpreadsheet(LHCI_GOOGLE_SPREAD_SHEET_ID);
-        #       await doc.useServiceAccountAuth(creds);
-        #       await doc.loadInfo();
+              const doc = new GoogleSpreadsheet(LHCI_GOOGLE_SPREAD_SHEET_ID);
+              await doc.useServiceAccountAuth(creds);
+              await doc.loadInfo();
 
-        #       for (const pageName in desktop) {
-        #         const sheetId = getLhciSheetIdFromPageName(pageName);
-        #         const desktopScore = desktop[pageName];
-        #         const mobileScore = mobile[pageName];
+              for (const pageName in desktop) {
+                const sheetId = getLhciSheetIdFromPageName(pageName);
+                const desktopScore = desktop[pageName];
+                const mobileScore = mobile[pageName];
 
-        #         const sheet = doc.sheetsById[sheetId];
-        #         await sheet.loadHeaderRow();
+                const sheet = doc.sheetsById[sheetId];
+                await sheet.loadHeaderRow();
 
-        #         const prUrl = `https://github.com/${repo.owner}/${repo.repo}/pull/${payload.pull_request.number}`;
-        #         const prHyperlink = '=HYPERLINK("' + prUrl + '", "#' + payload.pull_request.number + '")';
+                const prUrl = `https://github.com/${repo.owner}/${repo.repo}/pull/${payload.pull_request.number}`;
+                const prHyperlink = '=HYPERLINK("' + prUrl + '", "#' + payload.pull_request.number + '")';
 
-        #         const rows = await sheet.getRows();
-        #         const previousRow = rows.find((row) => row['PR url'] === `#${payload.pull_request.number}`);
+                const rows = await sheet.getRows();
+                const previousRow = rows.find((row) => row['PR url'] === `#${payload.pull_request.number}`);
 
-        #         if (previousRow) {
-        #           previousRow['Monitoring Time'] = monitoringTime;
-        #           previousRow['PR url'] = prHyperlink;
-        #           Object.keys(desktopScore).forEach((key) => {
-        #             previousRow[key + ' [D]'] = desktopScore[key];
-        #             previousRow[key + ' [M]'] = mobileScore[key];
-        #           });
+                if (previousRow) {
+                  previousRow['Monitoring Time'] = monitoringTime;
+                  previousRow['PR url'] = prHyperlink;
+                  Object.keys(desktopScore).forEach((key) => {
+                    previousRow[key + ' [D]'] = desktopScore[key];
+                    previousRow[key + ' [M]'] = mobileScore[key];
+                  });
 
-        #           await previousRow.save();
-        #           continue;
-        #         }
+                  await previousRow.save();
+                  continue;
+                }
 
-        #         const newRow = { 'PR url': prHyperlink, 'Monitoring Time': monitoringTime };
-        #         Object.keys(desktopScore).forEach((key) => {
-        #             newRow[key + ' [D]'] = desktopScore[key];
-        #             newRow[key + ' [M]'] = mobileScore[key];
-        #           });
+                const newRow = { 'PR url': prHyperlink, 'Monitoring Time': monitoringTime };
+                Object.keys(desktopScore).forEach((key) => {
+                    newRow[key + ' [D]'] = desktopScore[key];
+                    newRow[key + ' [M]'] = mobileScore[key];
+                  });
 
-        #         await sheet.addRow(newRow);
-        #       }
-        #     }
+                await sheet.addRow(newRow);
+              }
+            }
 
-        #     updateGoogleSheet().catch(err => core.setFailed(err.message));
+            updateGoogleSheet().catch(err => core.setFailed(err.message));
