@@ -184,6 +184,9 @@ jobs:
             }
 
       - name: Update Google SpreadSheet
+        env:
+          LHCI_GOOGLE_CLIENT_EMAIL: ${{ secrets.LHCI_GOOGLE_CLIENT_EMAIL }}
+          LHCI_GOOGLE_PRIVATE_KEY: ${{ secrets.LHCI_GOOGLE_PRIVATE_KEY }}
         uses: actions/github-script@v7
         with:
           script: |
@@ -193,8 +196,8 @@ jobs:
 
             const updateGoogleSheet = async () => {
               const creds = {
-                client_email: `${{ secrets.LHCI_GOOGLE_CLIENT_EMAIL }}`,
-                private_key: `${{ secrets.LHCI_GOOGLE_PRIVATE_KEY }}`,
+                client_email: process.env.LHCI_GOOGLE_CLIENT_EMAIL,
+                private_key: process.env.LHCI_GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
               };
 
               const { desktop, mobile } = ${{ steps.format_lighthouse_score.outputs.scores }};
