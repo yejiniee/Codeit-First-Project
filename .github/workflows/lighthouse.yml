@@ -197,6 +197,14 @@ jobs:
                 });
               }
             }
+      # 디버깅 코드
+      - name: Debug Scores
+        run: |
+          echo "DESKTOP: $DESKTOP_SCORES"
+          echo "MOBILE: $MOBILE_SCORES"
+        env:
+          DESKTOP_SCORES: ${{ steps.format_lighthouse_score.outputs.scores.desktop }}
+          MOBILE_SCORES: ${{ steps.format_lighthouse_score.outputs.scores.mobile }}
 
       - name: Update Google SpreadSheet
         run: |
