@@ -171,7 +171,7 @@ jobs:
               await octokit.issues.updateComment({
                 owner: repo.owner,
                 repo: repo.repo,
-                comment_id: previousLHCIComment.id, 
+                comment_id: previousLhciComment.id, 
                 body: newComment, 
               });
             } else { 
