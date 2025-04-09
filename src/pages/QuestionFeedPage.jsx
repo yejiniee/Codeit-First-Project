@@ -1,68 +1,52 @@
-import { useState, useEffect, useRef } from 'react';
-// import { useInView } from 'react-intersection-observer';
-import styled from 'styled-components';
+import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import QuestionFeedHeader from '../components/Feed/QuestionFeedHeader';
+import styled from 'styled-components';
+import QuestionWriteButton from '../components/Buttons/QuestionWriteButton';
 import FeedBox from '../components/Feed/FeedBox';
 import FeedCard from '../components/Feed/FeedCard';
-import QuestionWriteButton from '../components/Buttons/QuestionWriteButton';
+import NoQuestionFeed from '../components/Feed/NoQuestionFeed';
+import QuestionFeedHeader from '../components/Feed/QuestionFeedHeader';
+import useInfiniteScroll from '../hooks/useInfiniteScroll';
 import fetchQuestion from '../services/fetchQuestion';
 import timeSince from '../utils/timeSince';
-import NoQuestionFeed from '../components/Feed/NoQuestionFeed';
 
 export default function QuestionFeedPage() {
   const { id } = useParams();
   const [subjectId, setSubjectId] = useState(id);
   const [questions, setQuestions] = useState([]);
+  const [offset, setOffset] = useState(0);
   const limit = 5;
-  const [offset, setOffset] = useState(0); // 스크롤이 닿았을 때 새롭게 offset을 바꿈
-  const [loading, setLoading] = useState(false); // 로딩 성공, 실패를 담음
-  const pageEnd = useRef();
+  const [hasMore, setHasMore] = useState(true); // 더 불러올 데이터가 있는지
 
-  const loadMore = () => {
-    setOffset(prev => prev + 5);
-  };
-
-  const fetchPins = async (_id, _offset, _limit) => {
-    fetchQuestion(_id, _offset, _limit).then(data => {
-      if (data.results.length) {
-        // 데이터 있으면 실행
-        const transformedQuestions = data.results.map(question => ({
-          ...question,
-          createdWhen: timeSince(question.createdAt),
-          isAnswered: question.answer !== null,
-          answer: question.answer
-            ? {
-                ...question.answer,
-                createdWhen: timeSince(question.answer.createdAt),
-              }
-            : null,
-        }));
-        setQuestions(prev => [...prev, ...transformedQuestions]);
-      }
-      setLoading(true);
-    });
-  };
-
-  useEffect(() => {
-    fetchPins(subjectId, offset, limit);
-  }, [offset]);
-
-  useEffect(() => {
-    if (loading) {
-      // 로딩되었을 때만 실행
-      const observer = new IntersectionObserver(
-        entries => {
-          if (entries[0].isIntersecting) {
-            loadMore();
-          }
-        },
-        { threshold: 1 },
-      );
-      // 옵저버 탐색 시작
-      if (pageEnd.current) observer.observe(pageEnd.current);
+  const fetchMore = async () => {
+    const data = await fetchQuestion(subjectId, offset, limit);
+    if (data.results.length) {
+      const transformedQuestions = data.results.map(question => ({
+        ...question,
+        createdWhen: timeSince(question.createdAt),
+        isAnswered: question.answer !== null,
+        answer: question.answer
+          ? {
+              ...question.answer,
+              createdWhen: timeSince(question.answer.createdAt),
+            }
+          : null,
+      }));
+      setQuestions(prev => [...prev, ...transformedQuestions]);
+      setOffset(prev => prev + limit);
+    } else {
+      setHasMore(false); // 더 이상 데이터가 없으면 false
     }
-  }, [loading]);
+  };
+
+  useEffect(() => {
+    fetchMore();
+  }, []);
+
+  const { ref: pageEnd } = useInfiniteScroll({
+    fetchMore,
+    hasMore,
+  });
 
   return (
     <Wrapper>
@@ -94,6 +78,7 @@ export default function QuestionFeedPage() {
 
 const Loading = styled.div`
   display: flex;
+  height: 1px;
 `;
 
 const Wrapper = styled.div`

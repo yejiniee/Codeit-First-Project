@@ -47,15 +47,15 @@ jobs:
           LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}
         run: |
           npm install -g @lhci/cli
-          lhci collect --config=lighthouserc-desktop.js || echo 'Fail to Run Lighthouse CI 💦'
-          lhci upload --config=lighthouserc-desktop.js || echo 'Fail to Run Lighthouse CI 💦'
+          lhci collect --config=.lighthouserc-desktop.js || echo 'Fail to Run Lighthouse CI 💦'
+          lhci upload --config=.lighthouserc-desktop.js || echo 'Fail to Run Lighthouse CI 💦'
 
       - name: Run Lighthouse CI for Mobile
         env:
           LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}
         run: |
-          lhci collect --config=lighthouserc-mobile.js || echo 'Fail to Run Lighthouse CI 💦'
-          lhci upload --config=lighthouserc-mobile.js || echo 'Fail to Run Lighthouse CI 💦'
+          lhci collect --config=.lighthouserc-mobile.js || echo 'Fail to Run Lighthouse CI 💦'
+          lhci upload --config=.lighthouserc-mobile.js || echo 'Fail to Run Lighthouse CI 💦'
 
       - name: Format lighthouse score
         id: format_lighthouse_score
@@ -77,8 +77,8 @@ jobs:
 
             const formatResult = (res) => Math.round(res * 100);
 
-            const desktopResults = JSON.parse(fs.readFileSync(''));
-            const mobileResults = JSON.parse(fs.readFileSync(''));
+            const desktopResults = JSON.parse(fs.readFileSync('/home/runner/work/Codeit-First-Project/Codeit-First-Project/lhci_reports/desktop/manifest.json'));
+            const mobileResults = JSON.parse(fs.readFileSync('/home/runner/work/Codeit-First-Project/Codeit-First-Project/lhci_reports/mobile/manifest.json'));
 
             const monitoringTime = new Date().toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' });
             const scoreDescription = `> 🟢: ${LHCI_GREEN_MIN_SCORE} - 100` + ' / ' + `🟠: ${LHCI_ORANGE_MIN_SCORE} - ${LHCI_GREEN_MIN_SCORE - 1}` + ' / ' + `🔴: ${LHCI_RED_MIN_SCORE} - ${LHCI_ORANGE_MIN_SCORE - 1}`;
@@ -171,7 +171,7 @@ jobs:
               await octokit.issues.updateComment({
                 owner: repo.owner,
                 repo: repo.repo,
-                comment_id: previousLHCIComment.id, 
+                comment_id: previousLhciComment.id, 
                 body: newComment, 
               });
             } else { 
@@ -182,25 +182,64 @@ jobs:
                 body: newComment,
               });
             }
-            - name: Update Google SpreadSheet
-            uses: actions/github-script@v7
-            with: 
-              script: |
-                const fs = require('fs');
-                const { GoogleSpreadsheet } = require('google-spreadsheet');
-                const { LHCI_GOOGLE_SPREAD_SHEET_ID, getLhciSheetIdFromPageName } = require('./src/configs/lighthouse/Lighthouse.js');
-                
-                const updateGoogleSheet = async () => {
-                  const creds = {
-                    client_email: `${{ secrets.LHCI_GOOGLE_CLIENT_EMAIL }}`, 
-                    private_key: `${{ secrets.LHCI_GOOGLE_PRIVATE_KEY }}`, 
-                  };
 
-                  const { desktop, mobile } = ${{ steps.format_lighthouse_score.outputs.scores }};
-                  const monitoringTime = `${{ steps.format_lighthouse_score.outputs.monitoringTime }}`;
+      - name: Update Google SpreadSheet
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const { GoogleSpreadsheet } = require('google-spreadsheet');
+            const { LHCI_GOOGLE_SPREAD_SHEET_ID, getLhciSheetIdFromPageName } = require('./src/configs/lighthouse/Lighthouse.js');
 
-                  const { repo, payload } = context;
+            const updateGoogleSheet = async () => {
+              const creds = {
+                client_email: `${{ secrets.LHCI_GOOGLE_CLIENT_EMAIL }}`,
+                private_key: `${{ secrets.LHCI_GOOGLE_PRIVATE_KEY }}`,
+              };
 
-                  const doc = new GoogleSpreadsheet(LHCI_GOOGLE_SPREAD_SHEET_ID); 
-                  await doc.useServiceAccountAuth(creds);
-                  await doc.load
+              const { desktop, mobile } = ${{ steps.format_lighthouse_score.outputs.scores }};
+              const monitoringTime = `${{ steps.format_lighthouse_score.outputs.monitoringTime }}`;
+
+              const { repo, payload } = context;
+
+              const doc = new GoogleSpreadsheet(LHCI_GOOGLE_SPREAD_SHEET_ID);
+              await doc.useServiceAccountAuth(creds);
+              await doc.loadInfo();
+
+              for (const pageName in desktop) {
+                const sheetId = getLhciSheetIdFromPageName(pageName);
+                const desktopScore = desktop[pageName];
+                const mobileScore = mobile[pageName];
+
+                const sheet = doc.sheetsById[sheetId];
+                await sheet.loadHeaderRow();
+
+                const prUrl = `https://github.com/${repo.owner}/${repo.repo}/pull/${payload.pull_request.number}`;
+                const prHyperlink = '=HYPERLINK("' + prUrl + '", "#' + payload.pull_request.number + '")';
+
+                const rows = await sheet.getRows();
+                const previousRow = rows.find((row) => row['PR url'] === `#${payload.pull_request.number}`);
+
+                if (previousRow) {
+                  previousRow['Monitoring Time'] = monitoringTime;
+                  previousRow['PR url'] = prHyperlink;
+                  Object.keys(desktopScore).forEach((key) => {
+                    previousRow[key + ' [D]'] = desktopScore[key];
+                    previousRow[key + ' [M]'] = mobileScore[key];
+                  });
+
+                  await previousRow.save();
+                  continue;
+                }
+
+                const newRow = { 'PR url': prHyperlink, 'Monitoring Time': monitoringTime };
+                Object.keys(desktopScore).forEach((key) => {
+                  newRow[key + ' [D]'] = desktopScore[key];
+                  newRow[key + ' [M]'] = mobileScore[key];
+                });
+
+                await sheet.addRow(newRow);
+              }
+            }
+
+            updateGoogleSheet().catch(err => core.setFailed(err.message));
