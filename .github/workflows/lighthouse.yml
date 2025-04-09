@@ -184,9 +184,6 @@ jobs:
             }
 
       - name: Update Google SpreadSheet
-        env:
-          LHCI_GOOGLE_CLIENT_EMAIL: ${{ secrets.LHCI_GOOGLE_CLIENT_EMAIL }}
-          LHCI_GOOGLE_PRIVATE_KEY: ${{ secrets.LHCI_GOOGLE_PRIVATE_KEY }}
         uses: actions/github-script@v7
         with:
           script: |
@@ -195,10 +192,6 @@ jobs:
             const { LHCI_GOOGLE_SPREAD_SHEET_ID, getLhciSheetIdFromPageName } = require('./src/configs/lighthouse/Lighthouse.js');
 
             const updateGoogleSheet = async () => {
-              const creds = {
-                client_email: process.env.LHCI_GOOGLE_CLIENT_EMAIL,
-                private_key: process.env.LHCI_GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
-              };
 
               const { desktop, mobile } = ${{ steps.format_lighthouse_score.outputs.scores }};
               const monitoringTime = `${{ steps.format_lighthouse_score.outputs.monitoringTime }}`;
@@ -206,7 +199,10 @@ jobs:
               const { repo, payload } = context;
 
               const doc = new GoogleSpreadsheet(LHCI_GOOGLE_SPREAD_SHEET_ID);
-              await doc.useServiceAccountAuth(creds);
+              await doc.useServiceAccountAuth({
+                client_email: `${{ secrets.LHCI_GOOGLE_CLIENT_EMAIL }}`,
+                private_key: `${{ secrets.LHCI_GOOGLE_PRIVATE_KEY }}`,
+              });
               await doc.loadInfo();
 
               for (const pageName in desktop) {
