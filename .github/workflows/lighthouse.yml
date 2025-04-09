@@ -77,8 +77,8 @@ jobs:
 
             const formatResult = (res) => Math.round(res * 100);
 
-            const desktopResults = JSON.parse(fs.readFileSync(''));
-            const mobileResults = JSON.parse(fs.readFileSync(''));
+            const desktopResults = JSON.parse(fs.readFileSync('/home/runner/work/Codeit-First-Project/Codeit-First-Project/lhci_reports/desktop/manifest.json'));
+            const mobileResults = JSON.parse(fs.readFileSync('/home/runner/work/Codeit-First-Project/Codeit-First-Project/lhci_reports/mobile/manifest.json'));
 
             const monitoringTime = new Date().toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' });
             const scoreDescription = `> 🟢: ${LHCI_GREEN_MIN_SCORE} - 100` + ' / ' + `🟠: ${LHCI_ORANGE_MIN_SCORE} - ${LHCI_GREEN_MIN_SCORE - 1}` + ' / ' + `🔴: ${LHCI_RED_MIN_SCORE} - ${LHCI_ORANGE_MIN_SCORE - 1}`;
