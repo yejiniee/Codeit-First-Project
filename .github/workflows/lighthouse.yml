@@ -19,10 +19,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Use Node.js 22.13.1
+      - name: Use Node.js 18.12.1
         uses: actions/setup-node@v4
         with:
-          node-version: 22.13.1
+          node-version: 18.12.1
 
       - name: Cache node_modules
         uses: actions/cache@v4
@@ -64,12 +64,7 @@ jobs:
           script: |
 
             const fs = require('fs');
-            # const path = require('path'); 
             const { getLhciPageNameFromUrl, LHCI_GREEN_MIN_SCORE, LHCI_ORANGE_MIN_SCORE, LHCI_RED_MIN_SCORE } = require('./src/configs/lighthouse/Lighthouse.js');
-
-            # const reportDir = path.resolve('.lighthouseci');
-            # const files = fs.readdirSync(reportDir);
-            # const jsonFiles = files.filter(file => file.endsWith('.json'));
 
             const getColor = (score) => {
               if (score >= LHCI_GREEN_MIN_SCORE) return '🟢';
@@ -84,21 +79,6 @@ jobs:
 
             const desktopResults = JSON.parse(fs.readFileSync(''));
             const mobileResults = JSON.parse(fs.readFileSync(''));
-            # const desktopResults = jsonFiles
-            #   .filter(file => file.toLowerCase().includes('desktop'))
-            #   .map(file => {
-            #     const jsonPath = path.join(reportDir, file);
-            #     const data = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
-            #     return { ...data, jsonPath };
-            #   });
-
-            # const mobileResults = jsonFiles
-            #   .filter(file => file.toLowerCase().includes('mobile'))
-            #   .map(file => {
-            #     const jsonPath = path.join(reportDir, file);
-            #     const data = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
-            #     return { ...data, jsonPath };
-            #   });
 
             const monitoringTime = new Date().toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' });
             const scoreDescription = `> 🟢: ${LHCI_GREEN_MIN_SCORE} - 100` + ' / ' + `🟠: ${LHCI_ORANGE_MIN_SCORE} - ${LHCI_GREEN_MIN_SCORE - 1}` + ' / ' + `🔴: ${LHCI_RED_MIN_SCORE} - ${LHCI_ORANGE_MIN_SCORE - 1}`;
@@ -171,48 +151,42 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            async ({ github, context }) => {  
-              const { repo, payload } = context;
 
-              const { data: previousComments } = await github.issues.listComments({
+            const fs = require('fs');
+            const { Octokit } = require('@octokit/rest');
+            const octokit = new Octokit({ auth: `${{ secrets.GITHUB_TOKEN }}` });
+
+            const { repo, payload } = context;
+
+            const { data: previousComments } = await octokit.issues.listComments({
+              owner: repo.owner,
+              repo: repo.repo,
+              issue_number: payload.pull_request.number,
+            });
+
+            const previousLhciComment = previousComments.find((comment) => (comment.body.startsWith(`### Lighthouse report ✨\n`)));
+            const newComment = `${{ steps.format_lighthouse_score.outputs.comments }}`;
+
+            if (previousLhciComment) {
+              await octokit.issues.updateComment({
+                owner: repo.owner,
+                repo: repo.repo,
+                comment_id: previousLHCIComment.id, 
+                body: newComment, 
+              });
+            } else { 
+              await octokit.issues.createComment({
                 owner: repo.owner,
                 repo: repo.repo,
                 issue_number: payload.pull_request.number,
+                body: newComment,
               });
-
-              const previousLHCIComment = previousComments.find((comment) => (comment.body.startsWith(`### Lighthouse report ✨\n`)));
-              const newComment = `${{ steps.format_lighthouse_score.outputs.comments }}`;
-
-              if (previousLHCIComment) {
-                await octokit.issues.updateComment({
-                  owner: repo.owner,
-                  repo: repo.repo,
-                  comment_id: previousLHCIComment.id, 
-                  body: newComment, 
-                });
-              } else { 
-                await octokit.issues.createComment({
-                  owner: repo.owner,
-                  repo: repo.repo,
-                  issue_number: payload.pull_request.number,
-                  body: newComment,
-                });
-              }
             }
-      # 디버깅 코드
-      - name: Debug Scores
-        run: |
-          echo "DESKTOP: $DESKTOP_SCORES"
-          echo "MOBILE: $MOBILE_SCORES"
-        env:
-          DESKTOP_SCORES: ${{ steps.format_lighthouse_score.outputs.scores.desktop }}
-          MOBILE_SCORES: ${{ steps.format_lighthouse_score.outputs.scores.mobile }}
 
       - name: Update Google SpreadSheet
         uses: actions/github-script@v7
         with:
           script: |
-
             const fs = require('fs');
             const { GoogleSpreadsheet } = require('google-spreadsheet');
             const { LHCI_GOOGLE_SPREAD_SHEET_ID, getLhciSheetIdFromPageName } = require('./src/configs/lighthouse/Lighthouse.js');
@@ -260,9 +234,9 @@ jobs:
 
                 const newRow = { 'PR url': prHyperlink, 'Monitoring Time': monitoringTime };
                 Object.keys(desktopScore).forEach((key) => {
-                    newRow[key + ' [D]'] = desktopScore[key];
-                    newRow[key + ' [M]'] = mobileScore[key];
-                  });
+                  newRow[key + ' [D]'] = desktopScore[key];
+                  newRow[key + ' [M]'] = mobileScore[key];
+                });
 
                 await sheet.addRow(newRow);
               }
