@@ -64,7 +64,7 @@ jobs:
           script: |
 
             const fs = require('fs');
-            const { getLhciPageNameFromUrl, LHCI_GREEN_MIN_SCORE, LHCI_ORANGE_MIN_SCORE, LHCI_RED_MIN_SCORE } = require('./src/configs/lighthouse/Lighthouse.js');
+            const { getLhciPageNameFromUrl, LHCI_GREEN_MIN_SCORE, LHCI_ORANGE_MIN_SCORE, LHCI_RED_MIN_SCORE } = require('./src/configs/lighthouse/Lighthouse.cjs');
 
             const getColor = (score) => {
               if (score >= LHCI_GREEN_MIN_SCORE) return '🟢';
@@ -189,7 +189,7 @@ jobs:
           script: |
             const fs = require('fs');
             const { GoogleSpreadsheet } = require('google-spreadsheet');
-            const { LHCI_GOOGLE_SPREAD_SHEET_ID, getLhciSheetIdFromPageName } = require('./src/configs/lighthouse/Lighthouse.js');
+            const { LHCI_GOOGLE_SPREAD_SHEET_ID, getLhciSheetIdFromPageName } = require('./src/configs/lighthouse/Lighthouse.cjs');
 
             const updateGoogleSheet = async () => {
               const creds = {
